@@ -1,33 +1,35 @@
 import { fetchPage } from "./fetcher.js";
-import { parse } from "./parser.js";
+import { parsePage } from "./parser.js";
 
 const queue = [];
 const visited = new Set();
 
-while (queue.length > 0) {
-  const url = queue.shift();
+async function crawl(startUrl) {
+  queue.push(startUrl);
 
-  if (visited.has(url)) continue;
+  while (queue.length > 0) {
+    const url = queue.shift();
 
-  visited.add(url);
+    if (visited.has(url)) continue;
 
-  console.log(`Crawling: ${url}`);
+    visited.add(url);
 
-  try {
-    const html = await fetchPage(url);
-    const data = parse(html, url);
+    console.log(`Crawling: ${url}`);
 
-    console.log(`Title: ${data.title}`);
+    try {
+      const html = await fetchPage(url);
+      const data = parsePage(html, url);
 
-    for (const link of data.links) {
-      if (!visited.has(link)) {
-        queue.push(link);
+      console.log(`Title: ${data.title}`);
+
+      for (const link of data.links) {
+        if (!visited.has(link)) {
+          queue.push(link);
+        }
       }
+    } catch (err) {
+      console.error(`Error crawling ${url}: ${err.message}`);
     }
-  } catch {
-    err;
-  }
-  {
-    console.error(`Error crawling ${url}: ${err.message}`);
   }
 }
+crawl("https://google.com");
