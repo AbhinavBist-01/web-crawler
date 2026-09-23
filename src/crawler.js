@@ -7,6 +7,12 @@ const visited = new Set();
 async function crawl(startUrl) {
   queue.push(startUrl);
 
+  function isSameDomain(url) {
+    const startDomain = new URL(startUrl).hostname;
+    const urlDomain = new URL(url).hostname;
+    return startDomain === urlDomain;
+  }
+
   while (queue.length > 0) {
     const url = queue.shift();
 
@@ -24,7 +30,9 @@ async function crawl(startUrl) {
 
       for (const link of data.links) {
         if (!visited.has(link)) {
-          queue.push(link);
+          if (isSameDomain(link)) {
+            queue.push(link);
+          }
         }
       }
     } catch (err) {
