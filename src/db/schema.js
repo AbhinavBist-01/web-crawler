@@ -8,6 +8,7 @@ const pool = new Pool({
 });
 
 async function createTables() {
+  // Create tables
   await pool.query(`
     CREATE TABLE IF NOT EXISTS pages (
       id SERIAL PRIMARY KEY,
@@ -18,14 +19,24 @@ async function createTables() {
     );
 
     CREATE TABLE IF NOT EXISTS crawl_queue (
-    id SERIAL PRIMARY KEY,
-    url TEXT UNIQUE NOT NULL,
-    status TEXT DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+      id SERIAL PRIMARY KEY,
+      url TEXT UNIQUE NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
-  console.log("Tables created!");
+  // Update existing crawl_queue table
+  await pool.query(`
+    ALTER TABLE crawl_queue
+    ADD COLUMN IF NOT EXISTS attempts INTEGER DEFAULT 0;
+
+    ALTER TABLE crawl_queue
+    ADD COLUMN IF NOT EXISTS next_retry_at TIMESTAMP;
+  `);
+
+  console.log("Database schema ready!");
+
   await pool.end();
 }
 

@@ -30,15 +30,24 @@ export async function addToQueue(url) {
 }
 
 export async function getNextUrl() {
-  const result = await pool.query(
-    `
-    SELECT url 
-    FROM crawl_queue
-    WHERE status = 'pending'
-    ORDER BY id
-    LIMIT 1
-    `,
-  );
+  const result = await pool.query(`
+    UPDATE crawl_queue
+    SET status = 'crawling'
+    WHERE id = (
+      SELECT id
+      FROM crawl_queue
+      WHERE status = 'pending'
+        AND (
+          next_retry_at IS NULL
+          OR next_retry_at <= CURRENT_TIMESTAMP
+        )
+      ORDER BY id
+      LIMIT 1
+      FOR UPDATE SKIP LOCKED
+    )
+    RETURNING url;
+  `);
+
   return result.rows[0]?.url;
 }
 
@@ -57,7 +66,16 @@ export async function markFailed(url) {
   await pool.query(
     `
     UPDATE crawl_queue
-    SET status = 'failed'
+    SET
+      attempts = attempts + 1,
+      status = CASE
+        WHEN attempts + 1 >= 3 THEN 'failed'
+        ELSE 'pending'
+      END,
+      next_retry_at = CASE
+        WHEN attempts + 1 >= 3 THEN NULL
+        ELSE CURRENT_TIMESTAMP + INTERVAL '10 seconds'
+      END
     WHERE url = $1
     `,
     [url],
