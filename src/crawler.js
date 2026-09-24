@@ -3,13 +3,16 @@ import { parsePage } from "./parser.js";
 import { normalizeUrl } from "./url.js";
 import { canCrawl } from "./robots.js";
 import { delay } from "./limiter.js";
-import { savePage } from "./db.js";
-
-const queue = [];
-const visited = new Set();
+import {
+  savePage,
+  markCompleted,
+  getNextUrl,
+  addToQueue,
+  markFailed,
+} from "./db.js";
 
 async function crawl(startUrl) {
-  queue.push(startUrl);
+  await addToQueue(startUrl);
 
   function isSameDomain(url) {
     const startDomain = new URL(startUrl).hostname;
@@ -17,12 +20,9 @@ async function crawl(startUrl) {
     return startDomain === urlDomain;
   }
 
-  while (queue.length > 0) {
-    const url = queue.shift();
-
-    if (visited.has(url)) continue;
-
-    visited.add(url);
+  while (true) {
+    const url = await getNextUrl();
+    if (!url) break;
 
     console.log(`Crawling: ${url}`);
     await delay(1000);
@@ -31,9 +31,11 @@ async function crawl(startUrl) {
       const data = await fetchPage(url);
       const parsedData = parsePage(data.html, url);
 
-      console.log(`Title: ${data.title}`);
+      console.log(`Title: ${parsedData.title}`);
 
-      await savePage(url, data.title, data.status_code);
+      await savePage(url, parsedData.title, data.status_code);
+
+      await markCompleted(url);
 
       for (const link of data.links) {
         const normalizedUrl = normalizeUrl(link, url);
@@ -42,11 +44,13 @@ async function crawl(startUrl) {
           isSameDomain(normalizedUrl) &&
           (await canCrawl(normalizedUrl))
         ) {
-          queue.push(normalizedUrl);
+          await addToQueue(normalizedUrl);
         }
       }
     } catch (err) {
       console.error(`Error crawling ${url}: ${err.message}`);
+
+      await markFailed(url);
     }
   }
 }

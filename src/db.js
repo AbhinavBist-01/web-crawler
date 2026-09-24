@@ -18,10 +18,48 @@ export async function savePage(url, title, status_code) {
   );
 }
 
-async function test() {
-  await savePage("https://example.com", "Example Domain", 200);
-
-  console.log("Saved!");
+export async function addToQueue(url) {
+  await pool.query(
+    `
+        INSERT INTO crawl_queue (url)
+        VALUES ($1)
+        ON CONFLICT (url) DO NOTHING
+        `,
+    [url],
+  );
 }
 
-test();
+export async function getNextUrl() {
+  const result = await pool.query(
+    `
+    SELECT url 
+    FROM crawl_queue
+    WHERE status = 'pending'
+    ORDER BY id
+    LIMIT 1
+    `,
+  );
+  return result.rows[0]?.url;
+}
+
+export async function markCompleted(url) {
+  await pool.query(
+    `
+    UPDATE crawl_queue
+    SET status = 'completed'
+    WHERE url = $1
+    `,
+    [url],
+  );
+}
+
+export async function markFailed(url) {
+  await pool.query(
+    `
+    UPDATE crawl_queue
+    SET status = 'failed'
+    WHERE url = $1
+    `,
+    [url],
+  );
+}

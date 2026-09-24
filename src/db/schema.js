@@ -16,6 +16,13 @@ async function createTables() {
       status_code INTEGER,
       crawled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS crawl_queue (
+    id SERIAL PRIMARY KEY,
+    url TEXT UNIQUE NOT NULL,
+    status TEXT DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
   `);
 
   console.log("Tables created!");
