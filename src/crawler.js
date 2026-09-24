@@ -2,6 +2,7 @@ import { fetchPage } from "./fetcher.js";
 import { parsePage } from "./parser.js";
 import { normalizeUrl } from "./url.js";
 import { canCrawl } from "./robots.js";
+import { delay } from "./limiter.js";
 
 const queue = [];
 const visited = new Set();
@@ -23,6 +24,7 @@ async function crawl(startUrl) {
     visited.add(url);
 
     console.log(`Crawling: ${url}`);
+    await delay(1000);
 
     try {
       const html = await fetchPage(url);
