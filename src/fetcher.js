@@ -4,5 +4,8 @@ export async function fetchPage(url) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
-  return await response.text();
+  return {
+    html: await response.text(),
+    status_code: response.status,
+  };
 }

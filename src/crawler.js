@@ -28,12 +28,12 @@ async function crawl(startUrl) {
     await delay(1000);
 
     try {
-      const html = await fetchPage(url);
-      const data = parsePage(html, url);
+      const data = await fetchPage(url);
+      const parsedData = parsePage(data.html, url);
 
       console.log(`Title: ${data.title}`);
 
-      await savePage(url, data.title, 200);
+      await savePage(url, data.title, data.status_code);
 
       for (const link of data.links) {
         const normalizedUrl = normalizeUrl(link, url);
