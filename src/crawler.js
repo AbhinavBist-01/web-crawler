@@ -1,6 +1,7 @@
 import { fetchPage } from "./fetcher.js";
 import { parsePage } from "./parser.js";
 import { normalizeUrl } from "./url.js";
+import { canCrawl } from "./robots.js";
 
 const queue = [];
 const visited = new Set();
@@ -31,7 +32,11 @@ async function crawl(startUrl) {
 
       for (const link of data.links) {
         const normalizedUrl = normalizeUrl(link, url);
-        if (!visited.has(normalizedUrl) && isSameDomain(normalizedUrl)) {
+        if (
+          !visited.has(normalizedUrl) &&
+          isSameDomain(normalizedUrl) &&
+          (await canCrawl(normalizedUrl))
+        ) {
           queue.push(normalizedUrl);
         }
       }
