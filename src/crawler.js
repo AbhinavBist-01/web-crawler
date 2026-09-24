@@ -3,6 +3,7 @@ import { parsePage } from "./parser.js";
 import { normalizeUrl } from "./url.js";
 import { canCrawl } from "./robots.js";
 import { delay } from "./limiter.js";
+import { savePage } from "./db.js";
 
 const queue = [];
 const visited = new Set();
@@ -31,6 +32,8 @@ async function crawl(startUrl) {
       const data = parsePage(html, url);
 
       console.log(`Title: ${data.title}`);
+
+      await savePage(url, data.title, 200);
 
       for (const link of data.links) {
         const normalizedUrl = normalizeUrl(link, url);
