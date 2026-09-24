@@ -22,6 +22,9 @@ async function crawl(startUrl) {
 
   while (true) {
     const url = await getNextUrl();
+
+    console.log("NEXT URL:", url);
+
     if (!url) break;
 
     console.log(`Crawling: ${url}`);
@@ -29,22 +32,25 @@ async function crawl(startUrl) {
 
     try {
       const data = await fetchPage(url);
+      console.log("FETCHED:", data);
       const parsedData = parsePage(data.html, url);
+      console.log("PARSED:", parsedData);
 
       console.log(`Title: ${parsedData.title}`);
 
       await savePage(url, parsedData.title, data.status_code);
+      console.log("SAVED PAGE");
 
       await markCompleted(url);
+      console.log("MARKED COMPLETED");
 
-      for (const link of data.links) {
+      for (const link of parsedData.links) {
         const normalizedUrl = normalizeUrl(link, url);
-        if (
-          !visited.has(normalizedUrl) &&
-          isSameDomain(normalizedUrl) &&
-          (await canCrawl(normalizedUrl))
-        ) {
+        console.log("LINK:", normalizedUrl);
+
+        if (isSameDomain(normalizedUrl) && (await canCrawl(normalizedUrl))) {
           await addToQueue(normalizedUrl);
+          console.log("ADDED:", normalizedUrl);
         }
       }
     } catch (err) {
@@ -54,4 +60,4 @@ async function crawl(startUrl) {
     }
   }
 }
-crawl("https://google.com");
+crawl("https://youtube.com");
