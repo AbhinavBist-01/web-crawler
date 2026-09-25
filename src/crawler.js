@@ -48,7 +48,8 @@ async function worker(id, startUrl) {
         }
       }
     } catch (err) {
-      console.error(`Worker ${id} failed on ${url}:${err.message}`);
+      console.error(`Worker ${id} failed: ${err.message}`);
+      console.log("STATUS:", err.statusCode);
 
       await markFailed(url);
     }
@@ -63,4 +64,4 @@ async function crawl(startUrl) {
     worker(3, startUrl),
   ]);
 }
-crawl("https://instagram.com");
+crawl("https://chaicode.com");

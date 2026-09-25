@@ -11,7 +11,16 @@ export async function fetchPage(url) {
       },
     });
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        const error = new Error(`HTTP error! status: ${response.status}`);
+        error.statusCode = response.status;
+        throw error;
+      }
+    }
+    const contentType = response.headers.get("content-type");
+
+    if (!contentType || !contentType.includes("text/html")) {
+      throw new Error(`Not an HTML page: ${contentType}`);
     }
     return {
       html: await response.text(),
