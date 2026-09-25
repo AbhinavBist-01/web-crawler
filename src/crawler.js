@@ -11,9 +11,7 @@ import {
   markFailed,
 } from "./db.js";
 
-async function crawl(startUrl) {
-  await addToQueue(startUrl);
-
+async function worker(id, startUrl) {
   function isSameDomain(url) {
     const startDomain = new URL(startUrl).hostname;
     const urlDomain = new URL(url).hostname;
@@ -22,21 +20,17 @@ async function crawl(startUrl) {
 
   while (true) {
     const url = await getNextUrl();
-
-    console.log("NEXT URL:", url);
-
     if (!url) break;
 
-    console.log(`Crawling: ${url}`);
+    console.log(`Worker ${id} crawling:${url}`);
     await delay(1000);
 
     try {
       const data = await fetchPage(url);
       console.log("FETCHED:", data);
       const parsedData = parsePage(data.html, url);
-      console.log("PARSED:", parsedData);
 
-      console.log(`Title: ${parsedData.title}`);
+      console.log(`Worker ${id} - Title ${parsedData.title}`);
 
       await savePage(url, parsedData.title, data.status_code);
       console.log("SAVED PAGE");
@@ -54,10 +48,19 @@ async function crawl(startUrl) {
         }
       }
     } catch (err) {
-      console.error(`Error crawling ${url}: ${err.message}`);
+      console.error(`Worker ${id} failed on ${url}:${err.message}`);
 
       await markFailed(url);
     }
   }
+}
+async function crawl(startUrl) {
+  await addToQueue(startUrl);
+
+  await Promise.all([
+    worker(1, startUrl),
+    worker(2, startUrl),
+    worker(3, startUrl),
+  ]);
 }
 crawl("https://youtube.com");

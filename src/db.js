@@ -32,7 +32,8 @@ export async function addToQueue(url) {
 export async function getNextUrl() {
   const result = await pool.query(`
     UPDATE crawl_queue
-    SET status = 'crawling'
+    SET 
+    status = 'crawling'
     WHERE id = (
       SELECT id
       FROM crawl_queue
