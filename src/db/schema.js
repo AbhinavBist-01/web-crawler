@@ -24,6 +24,16 @@ async function createTables() {
       status TEXT DEFAULT 'pending',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS crawl_runs (
+  id SERIAL PRIMARY KEY,
+  start_url TEXT NOT NULL,
+  pages_crawled INTEGER DEFAULT 0,
+  pages_failed INTEGER DEFAULT 0,
+  total_response_time INTEGER DEFAULT 0,
+  started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  finished_at TIMESTAMP
+);
   `);
 
   // Update existing crawl_queue table

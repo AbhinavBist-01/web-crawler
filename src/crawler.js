@@ -9,10 +9,11 @@ import {
   getNextUrl,
   addToQueue,
   markFailed,
+  saveCrawlRun,
 } from "./db.js";
 
-async function worker(id, startUrl, stats) {
-  const MAX_PAGES = 100;
+async function worker(id, startUrl, stats, MAX_PAGES) {
+  const MAX_DEPTH = 2;
   let pagesCrawled = 0;
 
   function isSameDomain(url) {
@@ -34,15 +35,21 @@ async function worker(id, startUrl, stats) {
     await delay(1000);
 
     try {
+      const startTime = Date.now();
       const data = await fetchPage(url);
+      const responseTime = Date.now() - startTime;
+      const status = data.status_code;
+
+      stats.statusCodes[status] = (stats.statusCodes[status] || 0) + 1;
+      stats.totalResponseTime += responseTime;
 
       const parsedData = parsePage(data.html, url);
 
-      let canonicalUrl = parsedData.canonical;
+      // let canonicalUrl = parsedData.canonical;
 
-      if (parsedData.canonical) {
-        canonicalUrl = normalizeUrl(parsedData.canonical, url);
-      }
+      // if (parsedData.canonical) {
+      //   canonicalUrl = normalizeUrl(parsedData.canonical, url);
+      // }
 
       console.log(`Worker ${id} - Title ${parsedData.title}`);
 
@@ -51,8 +58,6 @@ async function worker(id, startUrl, stats) {
       await markCompleted(url);
 
       stats.crawled++;
-
-      const MAX_DEPTH = 2;
 
       for (const link of parsedData.links) {
         const normalizedUrl = normalizeUrl(link, url);
@@ -71,25 +76,49 @@ async function worker(id, startUrl, stats) {
 
       await markFailed(url, err.statusCode);
       stats.failed++;
+      if (err.statusCode) {
+        stats.statusCodes[err.statusCode] =
+          (stats.statusCodes[err.statusCode] || 0) + 1;
+      }
     }
   }
 }
 async function crawl(startUrl) {
+  const MAX_PAGES = 100;
+
   let stats = {
     crawled: 0,
     failed: 0,
+    statusCodes: {},
+    totalResponseTime: 0,
   };
   await addToQueue(startUrl);
 
   await Promise.all([
-    worker(1, startUrl, stats),
-    worker(2, startUrl, stats),
-    worker(3, startUrl, stats),
+    worker(1, startUrl, stats, MAX_PAGES),
+    worker(2, startUrl, stats, MAX_PAGES),
+    worker(3, startUrl, stats, MAX_PAGES),
   ]);
 
   console.log("\n===== CRAWL STATS =====");
   console.log(`Pages crawled: ${stats.crawled}`);
   console.log(`Pages failed: ${stats.failed}`);
   console.log("=======================");
+  console.log("\nStatus codes:");
+
+  for (const [status, count] of Object.entries(stats.statusCodes)) {
+    console.log(`${status} → ${count}`);
+  }
+  const averageResponseTime =
+    stats.crawled > 0 ? stats.totalResponseTime / stats.crawled : 0;
+
+  console.log(`Average response time: ${averageResponseTime.toFixed(2)}ms`);
+
+  await saveCrawlRun(
+    startUrl,
+    stats.crawled,
+    stats.failed,
+    stats.totalResponseTime,
+  );
 }
-crawl("https://claude.com");
+crawl("https://books.toscrape.com/");

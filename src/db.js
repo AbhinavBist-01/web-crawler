@@ -88,3 +88,18 @@ export async function markFailed(url, statusCode) {
     [url, statusCode],
   );
 }
+export async function saveCrawlRun(
+  startUrl,
+  pagesCrawled,
+  pagesFailed,
+  totalResponseTime,
+) {
+  await pool.query(
+    `
+    INSERT INTO crawl_runs
+    (start_url, pages_crawled, pages_failed, total_response_time, finished_at)
+    VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+    `,
+    [startUrl, pagesCrawled, pagesFailed, totalResponseTime],
+  );
+}
