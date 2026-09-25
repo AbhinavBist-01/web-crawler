@@ -18,14 +18,14 @@ export async function savePage(url, title, status_code) {
   );
 }
 
-export async function addToQueue(url) {
+export async function addToQueue(url, depth) {
   await pool.query(
     `
-        INSERT INTO crawl_queue (url)
-        VALUES ($1)
+        INSERT INTO crawl_queue (url,depth)
+        VALUES ($1,$2)
         ON CONFLICT (url) DO NOTHING
         `,
-    [url],
+    [url, depth],
   );
 }
 
@@ -46,10 +46,10 @@ export async function getNextUrl() {
       LIMIT 1
       FOR UPDATE SKIP LOCKED
     )
-    RETURNING url;
+    RETURNING url, depth;
   `);
 
-  return result.rows[0]?.url;
+  return result.rows[0];
 }
 
 export async function markCompleted(url) {

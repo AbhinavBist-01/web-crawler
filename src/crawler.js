@@ -19,9 +19,10 @@ async function worker(id, startUrl) {
   }
 
   while (true) {
-    const url = await getNextUrl();
-    if (!url) break;
+    const job = await getNextUrl();
+    if (!job) break;
 
+    const { url, depth } = job;
     console.log(`Worker ${id} crawling:${url}`);
     await delay(1000);
 
@@ -38,12 +39,18 @@ async function worker(id, startUrl) {
       await markCompleted(url);
       console.log("MARKED COMPLETED");
 
+      const MAX_DEPTH = 2;
+
       for (const link of parsedData.links) {
         const normalizedUrl = normalizeUrl(link, url);
         console.log("LINK:", normalizedUrl);
 
-        if (isSameDomain(normalizedUrl) && (await canCrawl(normalizedUrl))) {
-          await addToQueue(normalizedUrl);
+        if (
+          depth < MAX_DEPTH &&
+          isSameDomain(normalizedUrl) &&
+          (await canCrawl(normalizedUrl))
+        ) {
+          await addToQueue(normalizedUrl, depth + 1);
           console.log("ADDED:", normalizedUrl);
         }
       }
