@@ -6,6 +6,8 @@ export function parsePage(html, baseUrl) {
   const title = $("title").text().trim();
   const links = [];
 
+  const canonical = $("link[rel='canonical']").attr("href") || null;
+
   $("a[href]").each((_, element) => {
     const href = $(element).attr("href");
 
@@ -19,5 +21,5 @@ export function parsePage(html, baseUrl) {
       // Ignore invalid URLs
     }
   });
-  return { title, links };
+  return { title, links, canonical };
 }

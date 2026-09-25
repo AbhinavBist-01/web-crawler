@@ -12,6 +12,9 @@ import {
 } from "./db.js";
 
 async function worker(id, startUrl) {
+  const MAX_PAGES = 100;
+  let pagesCrawled = 0;
+
   function isSameDomain(url) {
     const startDomain = new URL(startUrl).hostname;
     const urlDomain = new URL(url).hostname;
@@ -22,6 +25,10 @@ async function worker(id, startUrl) {
     const job = await getNextUrl();
     if (!job) break;
 
+    if (pagesCrawled >= MAX_PAGES) {
+      break;
+    }
+    pagesCrawled++;
     const { url, depth } = job;
     console.log(`Worker ${id} crawling:${url}`);
     await delay(1000);
@@ -30,6 +37,14 @@ async function worker(id, startUrl) {
       const data = await fetchPage(url);
       console.log("FETCHED:", data);
       const parsedData = parsePage(data.html, url);
+
+      let canonicalUrl = parsedData.canonical;
+
+      if (parsedData.canonical) {
+        canonicalUrl = normalizeUrl(parsedData.canonical, url);
+      }
+
+      console.log(`Canonical URL: ${canonicalUrl}`);
 
       console.log(`Worker ${id} - Title ${parsedData.title}`);
 
@@ -71,4 +86,4 @@ async function crawl(startUrl) {
     worker(3, startUrl),
   ]);
 }
-crawl("https://hydradb.com");
+crawl("https://100xdevs.com");
