@@ -63,4 +63,4 @@ async function crawl(startUrl) {
     worker(3, startUrl),
   ]);
 }
-crawl("https://youtube.com");
+crawl("https://instagram.com");
