@@ -64,4 +64,4 @@ async function crawl(startUrl) {
     worker(3, startUrl),
   ]);
 }
-crawl("https://chaicode.com");
+crawl("https://apple.com");

@@ -1,17 +1,36 @@
+const robotsCache = new Map();
+
+function checkRules(rules, path) {
+  return !rules.some((rule) => path.startsWith(rule));
+}
+
 export async function canCrawl(url) {
-  const robotsUrl = new URL("/robots.txt", url).href;
+  const urlObj = new URL(url);
+  const origin = urlObj.origin;
+
+  if (robotsCache.has(origin)) {
+    return checkRules(robotsCache.get(origin), urlObj.pathname);
+  }
+
+  const robotsUrl = `${origin}/robots.txt`;
 
   const response = await fetch(robotsUrl);
 
   if (!response.ok) {
+    robotsCache.set(origin, []);
     return true;
   }
 
   const robotsTxt = await response.text();
 
-  const urlObj = new URL(url);
-  const path = urlObj.pathname;
+  const rules = parseRobots(robotsTxt);
 
+  robotsCache.set(origin, rules);
+
+  return checkRules(rules, urlObj.pathname);
+}
+
+function parseRobots(robotsTxt) {
   const lines = robotsTxt.split("\n");
 
   let isGlobalRules = false;
@@ -34,5 +53,5 @@ export async function canCrawl(url) {
     }
   }
 
-  return !disallowed.some((rule) => path.startsWith(rule));
+  return disallowed;
 }
