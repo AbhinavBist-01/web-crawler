@@ -4,6 +4,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "start": "node src/crawler.js",
+    "db:setup": "node src/db/schema.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
