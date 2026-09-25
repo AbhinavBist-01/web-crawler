@@ -33,6 +33,9 @@ async function createTables() {
 
     ALTER TABLE crawl_queue
     ADD COLUMN IF NOT EXISTS next_retry_at TIMESTAMP;
+
+    ALTER TABLE crawl_queue
+ADD COLUMN IF NOT EXISTS depth INTEGER DEFAULT 0;
   `);
 
   console.log("Database schema ready!");

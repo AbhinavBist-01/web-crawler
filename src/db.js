@@ -69,16 +69,20 @@ export async function markFailed(url, statusCode) {
     UPDATE crawl_queue
     SET
       attempts = attempts + 1,
+
       status = CASE
         WHEN $2 = 404 THEN 'failed'
         WHEN attempts + 1 >= 3 THEN 'failed'
         ELSE 'pending'
       END,
+
       next_retry_at = CASE
         WHEN $2 = 404 THEN NULL
         WHEN attempts + 1 >= 3 THEN NULL
-        ELSE CURRENT_TIMESTAMP + INTERVAL '10 seconds'
+        ELSE CURRENT_TIMESTAMP +
+             (5 * POWER(2, attempts)) * INTERVAL '1 second'
       END
+
     WHERE url = $1
     `,
     [url, statusCode],

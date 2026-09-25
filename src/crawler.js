@@ -51,7 +51,7 @@ async function worker(id, startUrl) {
       console.error(`Worker ${id} failed: ${err.message}`);
       console.log("STATUS:", err.statusCode);
 
-      await markFailed(url);
+      await markFailed(url, err.statusCode);
     }
   }
 }
@@ -64,4 +64,4 @@ async function crawl(startUrl) {
     worker(3, startUrl),
   ]);
 }
-crawl("https://apple.com");
+crawl("https://hydradb.com");
